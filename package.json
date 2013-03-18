@@ -1,0 +1,24 @@
+{
+  "name": "sockets",
+  "version": "0.0.0",
+  "description": "123",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha -R spec"
+  },
+  "repository": {
+    "type": "git",
+    "url": "ssh://git@bitbucket.org/heyhey/node-sockets.git"
+  },
+  "keywords": [
+    "123"
+  ],
+  "author": "lovebear",
+  "license": "MIT",
+  "readmeFilename": "README.md",
+  "devDependencies": {
+    "mocha": "*",
+    "should": "*",
+    "intercept.js": "*"
+  }
+}
