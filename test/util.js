@@ -1,6 +1,11 @@
 var util = require('../lib/util');
+var assert = require('assert');
+var should = require('should');
+
+var netSocket = require('net').Socket;
 
 describe('util', function() {
+
   it('generateId', function() {
     var dest = {};
     var i = 0;
@@ -11,4 +16,16 @@ describe('util', function() {
       i++
     }
   });
+
+  it('removeEvents', function() {
+    var socket = new netSocket();
+    var sockLen = socket._events.toString();
+    socket.on('close', function() {});    
+    socket.on('end', function() {});
+    socket.on('timeout', function() {});
+    socket._events.toString().should.not.eql({});
+    util.removeEvents(socket);
+    socket._events.should.eql({});
+  });
+
 });
