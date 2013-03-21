@@ -13,7 +13,7 @@ describe('util', function() {
       var id = util.generateId(dest);
       if (dest[id]) throw new Error('generateId didn\'t check unique')
       dest[id] = true;
-      i++
+      i++;
     }
   });
 
@@ -26,6 +26,11 @@ describe('util', function() {
     socket._events.toString().should.not.eql({});
     util.removeEvents(socket);
     socket._events.should.eql({});
+  });
+
+  it('objlength', function() {
+    var obj = {a: {'1': true, '2': true}, b: {'3': true}, c: {}};
+    util.objlength(obj).should.be.equal(3);
   });
 
 });
