@@ -31,12 +31,12 @@ describe('Pool', function() {
     });
   });
 
-  describe('get', function() {
+  describe('aquire', function() {
     it('returns available socket if any', function() {
-      var socket = pool.get();
+      var socket = pool.aquire();
       assert.equal(socket, undefined);
       pool.available.unshift({a: 'test'});
-      socket = pool.get();
+      socket = pool.aquire();
       assert.deepEqual(socket, {a: 'test'});
     });
   });
@@ -81,7 +81,5 @@ describe('Pool', function() {
     it('only creates socket if maximum is not met');
     it('adds successful sockets only to pool');
   });
-
-
 
 });
