@@ -20,8 +20,7 @@ describe('Pool', function() {
       setTimeout(function() {
         assert.strictEqual(pool.available.length, 1);
         done();
-      }, 1000);
-      //assert.ok(pool.available[0] instanceof Socket);
+      }, 50);
     });
 
     it('defaults', function() {
@@ -35,10 +34,11 @@ describe('Pool', function() {
 
   describe('aquire', function() {
     it('returns available socket if any', function() {
-      var socket = pool.aquire();
+      var pool2 = new Pool([{}], {min: 0});
+      var socket = pool2.aquire();
       assert.equal(socket, undefined);
-      pool.available.unshift({a: 'test'});
-      socket = pool.aquire();
+      pool2.available.unshift({a: 'test'});
+      socket = pool2.aquire();
       assert.deepEqual(socket, {a: 'test'});
     });
   });
