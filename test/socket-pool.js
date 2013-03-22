@@ -7,7 +7,7 @@ var connectCounter = 0;
 
 var server = http.createServer(function(req, res) {
   res.write('heres a response').end();
-}).listen(3001);
+}).listen(3100);
 
 
 describe('socket pooling', function() {
@@ -26,10 +26,10 @@ describe('socket pooling', function() {
    */
   it('simple pooling', function(done) {
     var pool = new Pool([
-      {host: '127.0.0.1', port: 3001}
+      {host: '127.0.0.1', port: 3100}
     ], {
-      min: 5,
-      max: 10
+      min: 2,
+      max: 7
     });
     server.on('connection', function() {
       connectCounter++;

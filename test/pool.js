@@ -3,24 +3,29 @@ var Pool = require('../index')
   , Socket = net.Socket
   , should = require('should');
 
-var testServer = net.createServer(3001);
+var testServer = net.createServer().listen(3001);
 
 var pool;
 describe('Pool', function() {
 
-  before(function() {
+  beforeEach(function(done) {
+    testServer.once('connection', function(socket) {
+      done();
+    });
+
     pool = new Pool([
       { host: 'localhost', port: 3001 }
     ]);
   })
 
+  after(function() {
+    testServer.close();
+  })
+
   describe('initialize', function() {
-    it('creates min sockets', function(done) {
+    it('creates min sockets', function() {
       // by default the min is 5
-      setTimeout(function() {
         pool.available.length.should.equal(5);
-        done();
-      }, 40);
     });
 
     it('defaults', function() {
@@ -44,9 +49,34 @@ describe('Pool', function() {
   });
 
   describe('add', function() {
-    // we make sure the socket is good first
-    it.skip('a socket to available pool', function() {
+    it('rejects bad sockets', function() {
+      pool.available.length.should.equal(5);
 
+      var socket, result;
+      socket = {};
+      result = pool.add(socket);
+      result.should.equal(false);
+      pool.available.length.should.equal(5);
+
+      // it expects the socket to be connected
+      socket = new Socket();
+      result = pool.add(socket);
+      result.should.equal(false);
+      pool.available.length.should.equal(5);
+
+    });
+
+    it('a socket to available pool', function(done) {
+      var socket = new Socket();
+      socket.connect(3001, '127.0.0.1');
+      socket.once('connect', function() {
+        this._testing = 123;
+        var result = pool.add(this);
+        result.should.equal(true);
+        pool.availale.length.should.equal(6);
+        pool.available[0]._testing.should.equal(123);
+        done();
+      });
     });
   });
 
