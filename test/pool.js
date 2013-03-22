@@ -51,7 +51,29 @@ describe('Pool', function() {
   });
 
   describe('queue', function() {
-    it('fn that will be called on next available socket');
+    beforeEach(function() {
+      pool._queue = [];
+    });
+
+    it('adds to _queue', function() {
+      pool.queue(function(socket) {});
+      pool._queue.should.have.lengthOf(1);
+    });
+
+    it('has a length', function() {
+      pool._queue.length.should.have.lengthOf(0);
+    });
+
+    it('fn that will be called on next available socket', function(done) {
+      var socket = new Socket();
+      socket.connect(3001, '127.0.0.1');
+      socket.once('connect', function() {
+        pool.queue(function(socket) {
+          done();
+        });
+        pool.add(socket);
+      });
+    });
   });
 
   describe('_available', function() {
@@ -59,45 +81,54 @@ describe('Pool', function() {
   });
 
   describe('_recommend', function() {
-    it('picks the server most in need', function() {
-      var p = new Pool([
+    beforeEach(function() {
+      pool = new Pool([
         {host: '127.0.0.1', port: 3001, weight: 10},
         {host: '127.0.0.1', port: 3002, weight: 5},
         {host: '127.0.0.1', port: 3003, weight: 2},
         {host: '127.0.0.1', port: 3004, weight: 1}
       ], { min: 0, max: 20 });
+    });
 
-      var server = p._recommend();
+    it('the server most in need', function() {
+      var server = pool._recommend();
       server.port.should.be.equal(3001);
-      // fake add a socket to the server
-      p.sockets[server.host + ':' + server.port].blah = {};
-      server = p._recommend();
+      pool.sockets[server.host + ':' + server.port].blah = {};
+      
+      server = pool._recommend();
       server.port.should.be.equal(3002);
+  });
+
+    it('maintains proportions', function() {
+      var server = pool._recommend();
+      server.port.should.be.equal(3001);
+      for (var i = 0; i < pool.max; i++) {
+        server = pool._recommend();
+        pool.sockets[server.host + ':' + server.port]['i' + i] = {};
+      }
+      Object.keys(pool.sockets['127.0.0.1:3001']).length.should.equal(11);
+      Object.keys(pool.sockets['127.0.0.1:3002']).length.should.equal(6);
+      Object.keys(pool.sockets['127.0.0.1:3003']).length.should.equal(2);
+      Object.keys(pool.sockets['127.0.0.1:3004']).length.should.equal(1);
     });
 
     it('maximum is already met, it still recommends', function() {
-      var p = new Pool([
-        {host: '127.0.0.1', port: 3001, weight: 10},
-        {host: '127.0.0.1', port: 3002, weight: 5},
-        {host: '127.0.0.1', port: 3003, weight: 2},
-      ], { min: 0, max: 20 });
-
-      var server = p._recommend();
+      var server = pool._recommend();
       server.port.should.be.equal(3001);
 
       // fake add sockets to reach max
-      for (var i = 0; i < p.max; i++) {
-        p.sockets[server.host + ':' + server.port]['i' + i] = {};
+      for (var i = 0; i < pool.max; i++) {
+        pool.sockets[server.host + ':' + server.port]['i' + i] = {};
       }
-      server = p._recommend();
+      server = pool._recommend();
       server.port.should.be.equal(3002);
 
       // fake add sockets to reach max
-      for (var i = 0; i < p.max; i++) {
-        p.sockets[server.host + ':' + server.port]['i' + i] = {};
-        p.sockets[server.host + ':3003']['i' + i] = {};
+      for (var i = 0; i < pool.max; i++) {
+        pool.sockets[server.host + ':' + server.port]['i' + i] = {};
+        pool.sockets[server.host + ':3003']['i' + i] = {};
       }
-      server = p._recommend();
+      server = pool._recommend();
       server.port.should.be.equal(3001);
     })
   });
