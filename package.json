@@ -1,17 +1,21 @@
 {
-  "name": "sockets",
-  "version": "0.0.0",
-  "description": "123",
+  "name": "socket-pool",
+  "version": "0.0.1",
+  "description": "socket pooling",
   "main": "index.js",
   "scripts": {
     "test": "mocha -R spec"
   },
   "repository": {
     "type": "git",
-    "url": "ssh://git@bitbucket.org/heyhey/node-sockets.git"
+    "url": "git://github.com/lovebear/socket-pool.git"
   },
   "keywords": [
-    "123"
+    "socket",
+    "socket",
+    "pooling",
+    "pool",
+    "socket pooling"
   ],
   "author": "lovebear",
   "license": "MIT",
@@ -19,6 +23,5 @@
   "devDependencies": {
     "mocha": "*",
     "should": "*",
-    "intercept.js": "*"
   }
 }

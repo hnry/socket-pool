@@ -1,8 +1,8 @@
 var PSocket = require('../lib/socket')
   , net = require('net')
   , Socket = net.Socket
+  , Pool = require('../lib/pool')
   , assert = require('assert');
-
 
 var ps;
 
@@ -28,8 +28,9 @@ describe('Socket', function() {
   });
 
   describe('release', function() {
-    // after the socket is deemed good
     it('socket back into the pool');
+
+    it('checks socket before releasing back into pool');
   });
 
 });

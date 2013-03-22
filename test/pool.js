@@ -16,11 +16,11 @@ describe('Pool', function() {
 
   describe('initialize', function() {
     it('creates min sockets', function(done) {
-      // by default the min is 1
+      // by default the min is 5
       setTimeout(function() {
-        assert.strictEqual(pool.available.length, 1);
+        assert.strictEqual(pool.available.length, 5);
         done();
-      }, 50);
+      }, 40);
     });
 
     it('defaults', function() {
