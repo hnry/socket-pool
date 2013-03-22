@@ -10,16 +10,52 @@ This library neither tries to be too high level (easy but assume too much), or t
 
 This is for the mid-level.
 
-## Usage / Explanation
+## Usage
 
 ```js
 var Pool = require('socket-pool');
 
-var pool = new Pool({
-  host: '127.0.0.1',
-  port: 80,
+var pool = new Pool([
+  { host: '127.0.0.1', port: 80, weight: 5 },
+  { host: '127.0.0.2', port: 80, weight: 10 }
+], {
   min: 5,
-  max: 10
+  max: 20
 });
 
+var do_stuff_with_socket = function(socket) {
+  socket.on('data', function(data) {
+    // do stuff with data
+    socket.release();
+  });
+
+  socket.write('some data');
+}
+
+var socket = pool.aquire();
+
+// aquire is 'sync'
+if (socket) {
+  do_stuff_with_socket(socket);
+
+} else {
+  // if there's no available socket... 
+
+  // we can queue and let the pool
+  // call it whenever a socket is available
+  pool.queue(do_stuff_with_socket);
+
+
+  // Or we can create our own socket for now...
+  socket = new Socket();
+  socket.connect(...)
+  .... do some stuff with the socket ...
+
+  // when we're done we can give it to the pool too
+  pool.add(socket);
+}
 ```
+
+
+
+
