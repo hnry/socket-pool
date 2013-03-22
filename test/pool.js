@@ -1,7 +1,7 @@
 var Pool = require('../index')
   , net = require('net')
   , Socket = net.Socket
-  , assert = require('assert');
+  , should = require('should');
 
 var testServer = net.createServer(3001);
 
@@ -18,17 +18,17 @@ describe('Pool', function() {
     it('creates min sockets', function(done) {
       // by default the min is 5
       setTimeout(function() {
-        assert.strictEqual(pool.available.length, 5);
+        pool.available.length.should.equal(5);
         done();
       }, 40);
     });
 
     it('defaults', function() {
-      assert.strictEqual(pool.min, 5);
-      assert.strictEqual(pool.max, 10);
-      assert.strictEqual(pool.servers['localhost:3001'].weight, 1);
-      assert.ok(pool.sockets['localhost:3001']);
-      assert.ok(pool.available);
+      pool.min.should.equal(5);
+      pool.max.should.equal(10);
+      pool.servers['localhost:3001'].weight.should.equal(1);
+      should.exist(pool.sockets['localhost:3001']);
+      should.exist(pool.available);
     });
   });
 
@@ -36,10 +36,10 @@ describe('Pool', function() {
     it('returns available socket if any', function() {
       var pool2 = new Pool([{}], {min: 0});
       var socket = pool2.aquire();
-      assert.equal(socket, undefined);
+      should.not.exist(socket);
       pool2.available.unshift({a: 'test'});
       socket = pool2.aquire();
-      assert.deepEqual(socket, {a: 'test'});
+      socket.should.eql({a: 'test'});
     });
   });
 
@@ -68,14 +68,38 @@ describe('Pool', function() {
       ], { min: 0, max: 20 });
 
       var server = p._recommend();
-      assert.strictEqual(server.port, 3001);
+      server.port.should.be.equal(3001);
       // fake add a socket to the server
       p.sockets[server.host + ':' + server.port].blah = {};
       server = p._recommend();
-      assert.strictEqual(server.port, 3002);
+      server.port.should.be.equal(3002);
     });
 
-    it('maximum is already met, it still recommends')
+    it('maximum is already met, it still recommends', function() {
+      var p = new Pool([
+        {host: '127.0.0.1', port: 3001, weight: 10},
+        {host: '127.0.0.1', port: 3002, weight: 5},
+        {host: '127.0.0.1', port: 3003, weight: 2},
+      ], { min: 0, max: 20 });
+
+      var server = p._recommend();
+      server.port.should.be.equal(3001);
+
+      // fake add sockets to reach max
+      for (var i = 0; i < p.max; i++) {
+        p.sockets[server.host + ':' + server.port]['i' + i] = {};
+      }
+      server = p._recommend();
+      server.port.should.be.equal(3002);
+
+      // fake add sockets to reach max
+      for (var i = 0; i < p.max; i++) {
+        p.sockets[server.host + ':' + server.port]['i' + i] = {};
+        p.sockets[server.host + ':3003']['i' + i] = {};
+      }
+      server = p._recommend();
+      server.port.should.be.equal(3001);
+    })
   });
 
   describe('_ensure', function() {
