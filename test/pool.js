@@ -3,10 +3,9 @@ var Pool = require('../index')
   , Socket = net.Socket
   , should = require('should');
 
-var testServer = net.createServer().listen(3001);
-
-var pool;
 describe('Pool', function() {
+  var pool, testServer;
+  testServer = net.createServer().listen(3001);
 
   beforeEach(function(done) {
     testServer.once('connection', function(socket) {
@@ -19,7 +18,7 @@ describe('Pool', function() {
   })
 
   after(function() {
-    testServer.close();
+    //testServer.close();
   })
 
   describe('initialize', function() {
@@ -164,9 +163,15 @@ describe('Pool', function() {
   });
 
   describe('_ensure', function() {
-    it('only creates socket if minimum is not met');
-    it('only creates socket if maximum is not met');
-    it('adds successful sockets only to pool');
+    it.skip('only creates socket if minimum is not met', function() {
+
+    });
+
+    it.skip('only creates socket if maximum is not met', function() {
+      var pool2 = new Pool([], min: 1, max: 10);
+    });
+
+    it('blacklists creating sockets for a certain host if repeated errors');
   });
 
 });
