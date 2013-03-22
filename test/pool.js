@@ -32,13 +32,13 @@ describe('Pool', function() {
     });
   });
 
-  describe('aquire', function() {
+  describe('acquire', function() {
     it('returns available socket if any', function() {
       var pool2 = new Pool([{}], {min: 0});
-      var socket = pool2.aquire();
+      var socket = pool2.acquire();
       should.not.exist(socket);
       pool2.available.unshift({a: 'test'});
-      socket = pool2.aquire();
+      socket = pool2.acquire();
       socket.should.eql({a: 'test'});
     });
   });
