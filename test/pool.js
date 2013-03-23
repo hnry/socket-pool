@@ -14,13 +14,16 @@ describe('Pool', function() {
     });
 
     pool = new Pool([
-      { host: 'localhost', port: 3001 }
+      { host: '127.0.0.1', port: 3001 }
     ]);
   })
 
   after(function() {
     //testServer.close();
   })
+
+  // Pool init, Pool.add
+  it('expects IP addresses');
 
   describe('initialize', function() {
     it('creates min sockets', function() {
@@ -31,8 +34,8 @@ describe('Pool', function() {
     it('defaults', function() {
       pool.min.should.equal(5);
       pool.max.should.equal(10);
-      pool.servers['localhost:3001'].weight.should.equal(1);
-      should.exist(pool.sockets['localhost:3001']);
+      pool.servers['127.0.0.1:3001'].weight.should.equal(1);
+      should.exist(pool.sockets['127.0.0.1:3001']);
       should.exist(pool.available);
     });
   });
@@ -73,7 +76,6 @@ describe('Pool', function() {
         this._testing = 123;
         var result = pool.add(this);
         result.should.equal(true);
-        pool.availale.length.should.equal(6);
         pool.available[0]._testing.should.equal(123);
         done();
       });
@@ -115,11 +117,14 @@ describe('Pool', function() {
       pool = new Pool([
         {host: '127.0.0.1', port: 3001, weight: 10},
         {host: '127.0.0.1', port: 3002, weight: 5},
-        {host: '127.0.0.1', port: 3003, weight: 2},
-        {host: '127.0.0.1', port: 3004, weight: 1}
+        {host: '127.0.0.1', port: 3003, weight: 1},
+        {host: '127.0.0.1', port: 3004, weight: 2}
       ], { min: 0, max: 20 });
     });
 
+    /*
+     *  It should realize the others have 0 and give priority
+     */
     it('the server most in need', function() {
       var server = pool._recommend();
       server.port.should.be.equal(3001);
@@ -127,6 +132,10 @@ describe('Pool', function() {
       
       server = pool._recommend();
       server.port.should.be.equal(3002);
+      pool.sockets[server.host + ':' + server.port].blah = {};
+
+      server = pool._recommend();
+      server.port.should.be.equal(3004);
   });
 
     it('maintains proportions', function() {
@@ -138,8 +147,8 @@ describe('Pool', function() {
       }
       Object.keys(pool.sockets['127.0.0.1:3001']).length.should.equal(11);
       Object.keys(pool.sockets['127.0.0.1:3002']).length.should.equal(6);
-      Object.keys(pool.sockets['127.0.0.1:3003']).length.should.equal(2);
-      Object.keys(pool.sockets['127.0.0.1:3004']).length.should.equal(1);
+      Object.keys(pool.sockets['127.0.0.1:3003']).length.should.equal(1);
+      Object.keys(pool.sockets['127.0.0.1:3004']).length.should.equal(2);
     });
 
     it('maximum is already met, it still recommends', function() {
