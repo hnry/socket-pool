@@ -3,14 +3,16 @@ var Pool = require('../index.js')
   , http = require('http');
 
 
-var connectCounter = 0;
 
-var server = http.createServer(function(req, res) {
-  res.write('heres a response').end();
-}).listen(3100);
 
 
 describe('socket pooling', function() {
+  var connectCounter = 0;
+
+  var server = http.createServer(function(req, res) {
+    res.write('heres a response');
+    res.end();
+  }).listen(3100);
 
   beforeEach(function() {
     connectCounter = 0;
@@ -33,17 +35,18 @@ describe('socket pooling', function() {
     });
     server.on('connection', function() {
       connectCounter++;
-      // we got a socket available
-      var socket = pool.acquire();
-      should.exist(socket);
-      if (connectCounter === 5) {
+      if (connectCounter === 2) {
+        // we got a socket available
+        var socket = pool.acquire();
+        should.exist(socket);
+        socket.setEncoding('utf8');
         socket.on('data', function(data) {
           data.should.equal('heres a response');
+          socket.release();
           done();
         });
         socket.write('GET / HTTP/1.1\r\n\r\n');
       }
-      socket.release();
     })
   })
 

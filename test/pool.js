@@ -93,7 +93,7 @@ describe('Pool', function() {
     });
 
     it('has a length', function() {
-      pool._queue.length.should.have.lengthOf(0);
+      pool._queue.length.should.equal(0);
     });
 
     it('fn that will be called on next available socket', function(done) {
