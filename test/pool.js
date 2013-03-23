@@ -1,7 +1,8 @@
 var Pool = require('../index')
   , net = require('net')
   , Socket = net.Socket
-  , should = require('should');
+  , should = require('should')
+  , intercept = require('intercept.js');
 
 describe('Pool', function() {
   var pool, testServer;
@@ -163,15 +164,46 @@ describe('Pool', function() {
   });
 
   describe('_ensure', function() {
-    it.skip('only creates socket if minimum is not met', function() {
-
+    it('only creates socket if minimum is not met', function() {
+      var pool2 = new Pool([{ host: '127.0.0.1', port: 3001 }], {min: 2, max: 10});
+      // create minimum
+      pool2.available.unshift({});
+      pool2.available.unshift({});
+      var result = intercept(Pool.prototype, Pool.prototype._recommend);
+      pool2._ensure();
+      result().should.equal(false);
+      pool2._recommend(); // reset
     });
 
-    it.skip('only creates socket if maximum is not met', function() {
-      var pool2 = new Pool([], min: 1, max: 10);
+    it('only creates socket if maximum is not met', function() {
+      var pool2 = new Pool([{ host: '127.0.0.1', port: 3001 }], {min: 1, max: 2});
+
+      // just to test this works when it's suppose to
+      var result = intercept(Pool.prototype, Pool.prototype._recommend);
+      try {
+        pool2._ensure();
+      } catch(e) {
+        result().called.should.equal(true);
+      }
+
+      for (var i = 0; i < 5; i++) {
+        pool2.sockets['127.0.0.1:3001']['i' + i] = {};
+      }
+      result = intercept(Pool.prototype, Pool.prototype._recommend);
+      pool2._ensure();
+      result().should.equal(false);
+      pool2._recommend(); // reset
     });
 
     it('blacklists creating sockets for a certain host if repeated errors');
+  });
+
+  describe('length', function() {
+    it('returns number of all sockets in the Pool');
+  });
+
+  describe('drain', function() {
+    it('closes all sockets in the Pool and the Pool itself');
   });
 
 });

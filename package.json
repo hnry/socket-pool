@@ -23,5 +23,6 @@
   "devDependencies": {
     "mocha": "*",
     "should": "*",
+    "intercept.js": "*"
   }
 }
