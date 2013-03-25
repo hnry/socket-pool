@@ -4,6 +4,7 @@ var PSocket = require('../lib/socket')
   , Pool = require('../lib/pool')
   , should = require('should');
 
+
 describe('Socket', function() {
   var ps, s;
 

@@ -2,32 +2,28 @@ var Pool = require('../index.js')
   , should = require('should')
   , http = require('http');
 
-
-
-
-
 describe('socket pooling', function() {
   var connectCounter = 0;
+  var pool;
+  var server;
 
-  var server = http.createServer(function(req, res) {
-    res.write('heres a response');
-    res.end();
-  }).listen(3100);
+  before(function() {
+    server = http.createServer(function(req, res) {
+      res.write('heres a response');
+      res.end();
+    }).listen(3100);
+  });
 
   beforeEach(function() {
     connectCounter = 0;
   })
-
-  after(function() {
-    server.close();
-  });
 
   /*
    *  Simple test to start a default pool
    *  and get a socket and write and get data
    */
   it('simple pooling', function(done) {
-    var pool = new Pool([
+    pool = new Pool([
       {host: '127.0.0.1', port: 3100}
     ], {
       min: 2,

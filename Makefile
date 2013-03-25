@@ -3,6 +3,6 @@ pack:
 		npm pack .
 
 test:
-		@mocha -R spec
+		@mocha -r should -R spec
 
 .PHONY: test

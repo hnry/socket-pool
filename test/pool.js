@@ -6,21 +6,21 @@ var Pool = require('../index')
 
 describe('Pool', function() {
   var pool, testServer;
-  testServer = net.createServer().listen(3001);
 
-  beforeEach(function(done) {
-    testServer.once('connection', function(socket) {
+  before(function(done) {
+    testServer = net.createServer().listen(8001);
+    testServer.once('connection', function() {
       done();
     });
-
     pool = new Pool([
-      { host: '127.0.0.1', port: 3001 }
+      { host: '127.0.0.1', port: 8001 }
     ]);
   })
 
   after(function() {
-    //testServer.close();
-  })
+    pool.drain();
+    testServer.close();
+  });
 
   // Pool init, Pool.add
   it('expects IP addresses');
@@ -34,24 +34,129 @@ describe('Pool', function() {
     it('defaults', function() {
       pool.min.should.equal(5);
       pool.max.should.equal(10);
-      pool.servers['127.0.0.1:3001'].weight.should.equal(1);
-      should.exist(pool.sockets['127.0.0.1:3001']);
+      pool.servers['127.0.0.1:8001'].weight.should.equal(1);
+      should.exist(pool.sockets['127.0.0.1:8001']);
       should.exist(pool.available);
     });
   });
 
+
+  describe('_available', function() {
+
+  });
+
+  describe('length', function() {
+    it('returns number of all sockets in the Pool');
+  });
+
+  describe('drain', function() {
+    it('closes all sockets in the Pool and the Pool itself');
+  });
+
+  describe('_ensure', function() {
+
+    var pool, testServer;
+
+    before(function(done) {
+      testServer = net.createServer().listen(3701);
+      testServer.once('connection', function() {
+        done();
+      });
+      pool = new Pool([
+        { host: '127.0.0.1', port: 3701 }
+      ], {
+        min: 1
+      });
+    })
+
+    after(function() {
+      pool.drain();
+      testServer.close();
+    });
+
+    it('only creates socket if minimum is not met', function() {
+      var pool = new Pool([{ host: '127.0.0.1', port: 3701 }], {min: 2, max: 10});
+      // create minimum
+      pool.available.unshift({});
+      pool.available.unshift({});
+      var result = intercept(Pool.prototype, Pool.prototype._recommend);
+      pool._ensure();
+      result().should.equal(false);
+      pool._recommend(); // reset
+    });
+
+    it('only creates socket if maximum is not met', function() {
+      var pool = new Pool([{ host: '127.0.0.1', port: 3701 }], {min: 1, max: 2});
+
+      // just to test this works when it's suppose to
+      var result = intercept(Pool.prototype, Pool.prototype._recommend);
+      try {
+        pool._ensure();
+      } catch(e) {
+        result().called.should.equal(true);
+      }
+
+      for (var i = 0; i < 5; i++) {
+        pool.sockets['127.0.0.1:3701']['i' + i] = {};
+      }
+      result = intercept(Pool.prototype, Pool.prototype._recommend);
+      pool._ensure();
+      result().should.equal(false);
+      pool._recommend(); // reset
+    });
+
+    it('blacklists creating sockets for a certain host if repeated errors');
+  });
+
+
   describe('acquire', function() {
+    var pool, testServer;
+
+    before(function(done) {
+      testServer = net.createServer().listen(3011);
+      testServer.once('connection', function() {
+        done();
+      });
+      pool = new Pool([
+        { host: '127.0.0.1', port: 3011 }
+      ], {
+        min: 1
+      });
+    })
+
+    after(function() {
+      pool.drain();
+      testServer.close();
+    });
+
     it('returns available socket if any', function() {
-      var pool2 = new Pool([{}], {min: 0});
-      var socket = pool2.acquire();
+      var socket = pool.acquire();
+      should.exist(socket);
+
+      socket = pool.acquire();
       should.not.exist(socket);
-      pool2.available.unshift({a: 'test'});
-      socket = pool2.acquire();
-      socket.should.eql({a: 'test'});
     });
   });
 
+
   describe('add', function() {
+    var pool, testServer;
+
+    before(function(done) {
+      testServer = net.createServer().listen(3005);
+      testServer.once('connection', function() {
+        done();
+      });
+      pool = new Pool([
+        { host: '127.0.0.1', port: 3005 }
+      ]);
+    })
+
+    after(function() {
+      pool.drain();
+      testServer.close();
+    });
+
     it('rejects bad sockets', function() {
       pool.available.length.should.equal(5);
 
@@ -66,12 +171,11 @@ describe('Pool', function() {
       result = pool.add(socket);
       result.should.equal(false);
       pool.available.length.should.equal(5);
-
     });
 
     it('a socket to available pool', function(done) {
       var socket = new Socket();
-      socket.connect(3001, '127.0.0.1');
+      socket.connect(3005, '127.0.0.1');
       socket.once('connect', function() {
         this._testing = 123;
         var result = pool.add(this);
@@ -82,7 +186,25 @@ describe('Pool', function() {
     });
   });
 
+
   describe('queue', function() {
+    var pool, testServer;
+
+    before(function(done) {
+      testServer = net.createServer().listen(3501);
+      testServer.once('connection', function() {
+        done();
+      });
+      pool = new Pool([
+        { host: '127.0.0.1', port: 3501 }
+      ]);
+    })
+
+    after(function() {
+      pool.drain();
+      testServer.close();
+    });
+
     beforeEach(function() {
       pool._queue = [];
     });
@@ -98,7 +220,7 @@ describe('Pool', function() {
 
     it('fn that will be called on next available socket', function(done) {
       var socket = new Socket();
-      socket.connect(3001, '127.0.0.1');
+      socket.connect(3501, '127.0.0.1');
       socket.once('connect', function() {
         pool.queue(function(socket) {
           done();
@@ -108,11 +230,23 @@ describe('Pool', function() {
     });
   });
 
-  describe('_available', function() {
-
-  });
 
   describe('_recommend', function() {
+    var pool, testServer;
+
+    before(function(done) {
+      testServer = net.createServer().listen(3001);
+      testServer.once('connection', function() {
+        done();
+      });
+      pool = new Pool([
+        {host: '127.0.0.1', port: 3001, weight: 10},
+        {host: '127.0.0.1', port: 3002, weight: 5},
+        {host: '127.0.0.1', port: 3003, weight: 1},
+        {host: '127.0.0.1', port: 3004, weight: 2}
+      ], { min: 0, max: 20 });
+    });
+
     beforeEach(function() {
       pool = new Pool([
         {host: '127.0.0.1', port: 3001, weight: 10},
@@ -136,7 +270,7 @@ describe('Pool', function() {
 
       server = pool._recommend();
       server.port.should.be.equal(3004);
-  });
+    });
 
     it('maintains proportions', function() {
       var server = pool._recommend();
@@ -170,49 +304,6 @@ describe('Pool', function() {
       server = pool._recommend();
       server.port.should.be.equal(3001);
     })
-  });
-
-  describe('_ensure', function() {
-    it('only creates socket if minimum is not met', function() {
-      var pool2 = new Pool([{ host: '127.0.0.1', port: 3001 }], {min: 2, max: 10});
-      // create minimum
-      pool2.available.unshift({});
-      pool2.available.unshift({});
-      var result = intercept(Pool.prototype, Pool.prototype._recommend);
-      pool2._ensure();
-      result().should.equal(false);
-      pool2._recommend(); // reset
-    });
-
-    it('only creates socket if maximum is not met', function() {
-      var pool2 = new Pool([{ host: '127.0.0.1', port: 3001 }], {min: 1, max: 2});
-
-      // just to test this works when it's suppose to
-      var result = intercept(Pool.prototype, Pool.prototype._recommend);
-      try {
-        pool2._ensure();
-      } catch(e) {
-        result().called.should.equal(true);
-      }
-
-      for (var i = 0; i < 5; i++) {
-        pool2.sockets['127.0.0.1:3001']['i' + i] = {};
-      }
-      result = intercept(Pool.prototype, Pool.prototype._recommend);
-      pool2._ensure();
-      result().should.equal(false);
-      pool2._recommend(); // reset
-    });
-
-    it('blacklists creating sockets for a certain host if repeated errors');
-  });
-
-  describe('length', function() {
-    it('returns number of all sockets in the Pool');
-  });
-
-  describe('drain', function() {
-    it('closes all sockets in the Pool and the Pool itself');
   });
 
 });
