@@ -236,6 +236,9 @@ describe('Pool', function() {
 
     before(function(done) {
       testServer = net.createServer().listen(3001);
+      var testServer2 = net.createServer().listen(3002);
+      var testServer3 = net.createServer().listen(3003);
+      var testServer4 = net.createServer().listen(3004);
       testServer.once('connection', function() {
         done();
       });
@@ -260,16 +263,14 @@ describe('Pool', function() {
      *  It should realize the others have 0 and give priority
      */
     it('the server most in need', function() {
-      var server = pool._recommend();
-      server.port.should.be.equal(3001);
-      pool.sockets[server.host + ':' + server.port].blah = {};
-      
-      server = pool._recommend();
-      server.port.should.be.equal(3002);
-      pool.sockets[server.host + ':' + server.port].blah = {};
+      // based on the weight provided servers would then be created in this order
+      var recommendations = [3001, 3002, 3003, 3004, 3001, 3002, 3001, 3001, 3002, 3001, 3001, 3002, 3004];
 
-      server = pool._recommend();
-      server.port.should.be.equal(3004);
+      for (var i = 0, l = recommendations.length; i<l; i++) {
+        var server = pool._recommend();
+        server.port.should.be.equal(recommendations[i]);
+        pool.sockets[server.host + ':' + server.port]['i'+i] = {};
+      }
     });
 
     it('maintains proportions', function() {
@@ -301,8 +302,12 @@ describe('Pool', function() {
         pool.sockets[server.host + ':' + server.port]['i' + i] = {};
         pool.sockets[server.host + ':3003']['i' + i] = {};
       }
-      server = pool._recommend();
-      server.port.should.be.equal(3001);
+      // server 3004 is the lowest, so the pool will keep recommeding 3004
+      for (var i = 0; i < 4; i++) {
+        server = pool._recommend();
+        server.port.should.be.equal(3004);
+        pool.sockets[server.host + ':' + server.port]['i' + i] = {};
+      }
     })
   });
 
