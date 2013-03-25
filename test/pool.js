@@ -5,30 +5,29 @@ var Pool = require('../index')
   , intercept = require('intercept.js');
 
 describe('Pool', function() {
-  var pool, testServer;
-
-  before(function(done) {
-    testServer = net.createServer().listen(8001);
-    testServer.once('connection', function() {
-      done();
-    });
-    pool = new Pool([
-      { host: '127.0.0.1', port: 8001 }
-    ]);
-  })
-
-  after(function() {
-    pool.drain();
-    testServer.close();
-  });
-
-  // Pool init, Pool.add
-  it('expects IP addresses');
 
   describe('initialize', function() {
+    var pool, testServer, counter = 0;
+
+    before(function(done) {
+      testServer = net.createServer().listen(8001);
+      testServer.on('connection', function() {
+        counter++;
+        if (counter === 5) done();
+      });
+      pool = new Pool([
+        { host: '127.0.0.1', port: 8001 }
+      ]);
+    })
+
+    after(function() {
+      pool.drain();
+      testServer.close();
+    });
+
     it('creates min sockets', function() {
       // by default the min is 5
-        pool.available.length.should.equal(5);
+      pool.available.length.should.equal(5);
     });
 
     it('defaults', function() {
@@ -105,7 +104,7 @@ describe('Pool', function() {
       pool._recommend(); // reset
     });
 
-    it('blacklists creating sockets for a certain host if repeated errors');
+    it('delays creating sockets for a certain host if repeated errors');
   });
 
 
@@ -140,12 +139,13 @@ describe('Pool', function() {
 
 
   describe('add', function() {
-    var pool, testServer;
+    var pool, testServer, counter = 0;
 
     before(function(done) {
       testServer = net.createServer().listen(3005);
-      testServer.once('connection', function() {
-        done();
+      testServer.on('connection', function() {
+        counter++;
+        if (counter === 5) done();
       });
       pool = new Pool([
         { host: '127.0.0.1', port: 3005 }
