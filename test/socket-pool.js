@@ -37,7 +37,7 @@ describe('socket pooling', function() {
         should.exist(socket);
         socket.setEncoding('utf8');
         socket.on('data', function(data) {
-          data.should.equal('heres a response');
+          data.should.match(/heres a response/);
           socket.release();
           done();
         });

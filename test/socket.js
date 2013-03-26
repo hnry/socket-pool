@@ -35,11 +35,24 @@ describe('Socket', function() {
     ps.connect();
   });
 
-  it('is essentially a socket', function() {
-    ps.write.should.be.a('function');
-    ps.connect.should.be.a('function');
-    ps.end.should.be.a('function');
-    ps.setEncoding.should.be.a('function');
+  it('is essentially a socket', function(done) {
+    var server = net.createServer(function() {
+      var socketFns = ['connect', 'write', 'setEncoding', 'end']
+      var socketProps = ['bufferSize', 'address', 'bytesRead']
+
+      for (var i = 0, l = socketFns.length; i < l; i++) {
+        ps[socketFns[i]].should.be.a('function');
+      }
+
+      for (var i = 0, l = socketProps.length; i < l; i++) {
+        if (!ps[socketProps[i]]) throw new Error(socketProps[i] + ' does not exist')
+      }
+
+      ps.end();
+      server.close();
+      done();
+    }).listen(12001);
+    ps.connect(12001, '127.0.0.1');
   });
 
   /*
