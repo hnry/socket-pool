@@ -59,7 +59,7 @@ describe('Socket', function() {
    *  Different ways the Socket will try to recover
    */
   describe('recovery', function() {
-
+    it('retries connection')
 
   });
 

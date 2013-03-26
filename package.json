@@ -17,6 +17,9 @@
     "pool",
     "socket pooling"
   ],
+  "engines": {
+    "node": ">= 0.10.0"
+  },
   "author": "lovebear",
   "license": "MIT",
   "readmeFilename": "README.md",

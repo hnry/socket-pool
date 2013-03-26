@@ -41,7 +41,8 @@ describe('Pool', function() {
 
 
   describe('_available', function() {
-
+    // acquire needs to do this too
+    it('maintains minimum sockets, calls _ensure');
   });
 
   describe('length', function() {
