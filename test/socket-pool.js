@@ -22,7 +22,7 @@ describe('socket pooling', function() {
    *  Simple test to start a default pool
    *  and get a socket and write and get data
    */
-  it('simple pooling', function(done) {
+  it('simple', function(done) {
     pool = new Pool([
       {host: '127.0.0.1', port: 45000}
     ], {
@@ -44,6 +44,8 @@ describe('socket pooling', function() {
         socket.write('GET / HTTP/1.1\r\n\r\n');
       }
     })
-  })
+  });
+
+  it('complex');
 
 });

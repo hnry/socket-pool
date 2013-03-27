@@ -28,4 +28,6 @@ describe('util', function() {
     socket._events.should.eql({});
   });
 
+  it('delayCall');
+
 });

@@ -43,8 +43,49 @@ describe('Pool', function() {
 
 
   describe('_available', function() {
-    // acquire needs to do this too
-    it('maintains minimum sockets, calls _ensure');
+    var pool, port;
+
+    before(function(done) {
+      port = startServer(2, function() { done(); });
+      pool = new Pool([
+        { host: '127.0.0.1', port: port }
+      ], {
+        min: 2,
+        max: 15
+      });
+    });
+
+    it('acquire maintains minimum sockets', function(done) {
+      var socket = pool.acquire();
+      pool.available.length.should.equal(1);
+      pool.sockets.length().should.equal(2);
+      function checkAvailable() {
+        setTimeout(function() {
+          if (pool.available.length === 2) {
+            pool.sockets.length().should.equal(3);
+            socket.release();
+            done();
+          } else { 
+            checkAvailable();
+          }
+        }, 200);
+      };
+      checkAvailable();
+    });
+
+    it('queue maintains minimum sockets', function(done) {
+      pool.min = 1;
+      var queue = function() {
+        pool.queue(function(sock) {
+          if (pool.sockets.length() > 12) {
+            done();
+          } else {
+            queue();
+          }
+        });
+      };
+      queue();
+    });
   });
 
   describe('drain', function() {
@@ -167,15 +208,24 @@ describe('Pool', function() {
       port = startServer(1, function() { done(); });
       pool = new Pool([
         { host: '127.0.0.1', port: port }
-      ]);
+      ], {
+        min: 1,
+        max: 2
+      });
     })
 
-    beforeEach(function() {
-      pool._queue = [];
-    });
-
-    it('adds to _queue', function() {
-      pool.queue(function(socket) {});
+    it('adds to _queue', function(done) {
+      pool.queue(function(socket) { 
+        setTimeout(function() {
+          socket.release();
+        }, 100);
+      });
+      pool.queue(function(socket) { 
+        setTimeout(function() {
+          socket.release();
+          done();
+        }, 100);
+      });
       pool._queue.should.have.lengthOf(1);
     });
 
