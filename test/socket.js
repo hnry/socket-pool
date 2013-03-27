@@ -66,7 +66,7 @@ describe('Socket', function() {
 
   describe('release', function() {
     var pool;
-
+    this.timeout(1000000);
     before(function(done) {
       var port = startServer(5, function() { done(); });
       pool = new Pool([
@@ -81,6 +81,13 @@ describe('Socket', function() {
       pool.available.length.should.equal(5);
     });
 
+    it('prevents socket from being used after', function() {
+      var socket = pool.acquire();
+      socket.release();
+      var result = socket.write('123');
+      result.should.not.equal(true);
+    });
+
     it('removes all events', function() {
       var socket = pool.acquire();
       socket.on('data', function() {});
@@ -88,10 +95,33 @@ describe('Socket', function() {
       socket._test = 123;
       socket.release();
       pool.available[0]._test.should.equal(123);
+      delete(pool.available[0]._test);
       Object.keys(pool.available[0]._events).length.should.equal(0);
     });
 
-    it('flushes or waits for socket buffer to empty');
+    it('waits for socket buffer to empty', function(done) {
+      var buf = new Buffer(10000000);
+      var socket = pool.acquire();
+      socket._test = 45;
+      socket.bufferSize().should.equal(0);
+      socket.write(buf);
+      socket.bufferSize().should.not.equal(0);
+      socket.release();
+      should.not.exist(pool.available[0]._test);
+
+      var testFn = function(socket) {
+        if (socket._test === 45) {
+          socket.bufferSize().should.equal(0);
+          socket.release();
+          done();
+        } else {
+          pool.queue(testFn);
+        }
+        socket.release();
+      }
+
+      pool.queue(testFn);
+    });
 
     it('checks socket before releasing back into pool');
   });

@@ -10,7 +10,8 @@ module.exports = function(cnt, fn) {
 
   cnt = cnt || null;
   var count = 0;
-  var server = net.createServer(function() {
+  var server = net.createServer(function(socket) {
+    socket.on('data', function(data) {});
     count++;
     if (count === cnt) fn();
   }).listen(port);
