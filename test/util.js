@@ -28,9 +28,4 @@ describe('util', function() {
     socket._events.should.eql({});
   });
 
-  it('objlength', function() {
-    var obj = {a: {'1': true, '2': true}, b: {'3': true}, c: {}};
-    util.objlength(obj).should.be.equal(3);
-  });
-
 });

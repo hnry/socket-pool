@@ -1,6 +1,5 @@
 var Pool = require('../index')
-  , net = require('net')
-  , Socket = net.Socket
+  , Socket = require('net').Socket
   , should = require('should')
   , intercept = require('intercept.js');
 
