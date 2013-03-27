@@ -4,6 +4,7 @@ var PSocket = require('../lib/socket')
   , Pool = require('../lib/pool')
   , should = require('should');
 
+var startServer = require('./helper/startserver');
 
 describe('Socket', function() {
   var ps, s;
@@ -64,9 +65,33 @@ describe('Socket', function() {
   });
 
   describe('release', function() {
-    it('socket back into the pool');
+    var pool;
 
-    it('removes all events and flushes the socket');
+    before(function(done) {
+      var port = startServer(5, function() { done(); });
+      pool = new Pool([
+        { host: '127.0.0.1', port: port }
+      ]);
+    })
+
+    it('socket back into the pool', function() {
+      var socket = pool.acquire();
+      pool.available.length.should.equal(4);
+      socket.release();
+      pool.available.length.should.equal(5);
+    });
+
+    it('removes all events', function() {
+      var socket = pool.acquire();
+      socket.on('data', function() {});
+      Object.keys(socket._events).length.should.equal(1);
+      socket._test = 123;
+      socket.release();
+      pool.available[0]._test.should.equal(123);
+      Object.keys(pool.available[0]._events).length.should.equal(0);
+    });
+
+    it('flushes or waits for socket buffer to empty');
 
     it('checks socket before releasing back into pool');
   });

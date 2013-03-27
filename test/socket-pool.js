@@ -11,7 +11,7 @@ describe('socket pooling', function() {
     server = http.createServer(function(req, res) {
       res.write('heres a response');
       res.end();
-    }).listen(3100);
+    }).listen(45000);
   });
 
   beforeEach(function() {
@@ -24,7 +24,7 @@ describe('socket pooling', function() {
    */
   it('simple pooling', function(done) {
     pool = new Pool([
-      {host: '127.0.0.1', port: 3100}
+      {host: '127.0.0.1', port: 45000}
     ], {
       min: 2,
       max: 7
