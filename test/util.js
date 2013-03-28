@@ -28,6 +28,14 @@ describe('util', function() {
     socket._events.should.eql({});
   });
 
+  it('arrayDiff', function() {
+    var arr = [1,2,3,4,5];
+    var arr2 = [2, 4];
+
+    var result = util.arrayDiff(arr, arr2);
+    result.should.eql([1,3,5]);
+  });
+
   it('delayCall');
 
 });

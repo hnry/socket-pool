@@ -68,7 +68,7 @@ describe('Pool', function() {
           } else { 
             checkAvailable();
           }
-        }, 200);
+        }, 50);
       };
       checkAvailable();
     });
@@ -134,8 +134,6 @@ describe('Pool', function() {
       result().should.equal(false);
       pool._recommend(); // reset
     });
-
-    it('delays creating sockets for a certain host if repeated errors');
   });
 
 
@@ -303,14 +301,14 @@ describe('Pool', function() {
       server.port.should.be.equal(port[0]);
 
       // fake add sockets to reach max
-      for (var i = 0; i < pool.max; i++) {
+      for (var i = 0; i < pool.max + 20; i++) {
         pool.sockets[server.host + ':' + server.port]['i' + i] = {};
       }
       server = pool._recommend();
       server.port.should.be.equal(port[1]);
 
       // fake add sockets to reach max
-      for (var i = 0; i < pool.max; i++) {
+      for (var i = 0; i < pool.max + 20; i++) {
         pool.sockets[server.host + ':' + server.port]['i' + i] = {};
         pool.sockets[server.host + ':' + port[2]]['i' + i] = {};
       }
@@ -318,9 +316,59 @@ describe('Pool', function() {
       for (var i = 0; i < 4; i++) {
         server = pool._recommend();
         server.port.should.be.equal(port[3]);
-        pool.sockets[server.host + ':' + server.port]['i' + i] = {};
+        pool.sockets[server.host + ':' + server.port]['qi' + i] = {};
+      }
+
+      for (var i = 0; i < 100; i++) {
+        server = pool._recommend();
+        pool.sockets[server.host + ':' + server.port]['zi' + i] = {};
       }
     })
+
+    it('servers not on the avoid list', function() {
+      pool._avoid['127.0.0.1:'+port[0]] = [Date.now(), 2];
+      for (var i = 0; i < 100; i++) {
+        // at 90 pretend the server is ok
+        if (i === 90) delete(pool._avoid['127.0.0.1:'+port[0]]);
+        var server = pool._recommend();
+        if (i >= 90) {
+          // from here on out this server is recommended
+          // because it would be very low (0%) in the pool
+          server.port.should.equal(port[0]);
+        } else {
+          server.port.should.not.equal(port[0]);
+        }
+        pool.sockets[server.host + ':' + server.port]['i' + i] = {};
+      }
+      pool.sockets.length().should.equal(100);
+    })
   });
+
+  describe('recovery', function() {
+    this.timeout(4000);
+
+    before(function() {
+
+    });
+
+    /*
+     *  if connecting to host causes errors, they will be timed out
+     *  doubling the timeout each try up to 128 minutes
+     *  2,4,8,16,32,64,128
+     */
+    it('delays creating sockets for a certain host if errors', function(done) {
+      // connection refused
+      var pool = new Pool([{
+        host: '127.0.0.1', port: 50001
+      }])
+      //pool._avoid['127.0.0.1:50001'] = [timestamp_last_tried, timeout_length];
+
+    });
+
+    // should also unref, and close it and all that to prevent leak
+    it('if a socket has been gone too long the pool drops it');
+
+    it('basic health checks');
+  })
 
 });
