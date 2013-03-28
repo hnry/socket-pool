@@ -361,9 +361,31 @@ describe('Pool', function() {
       var pool = new Pool([{
         host: '127.0.0.1', port: 50001
       }])
-      //pool._avoid['127.0.0.1:50001'] = [timestamp_last_tried, timeout_length];
+      setTimeout(function() {
+        Array.isArray(pool._avoid['127.0.0.1:50001']).should.equal(true);
+        // there's no possible servers to give
+        var server = pool._recommend();
+        should.not.exist(server);
+        pool._ensure(); // just to make sure it doesn't crash pool
 
+        // pretend the timeout time has expired
+        var lastTime = pool._avoid['127.0.0.1:50001'][0];
+        pool._avoid['127.0.0.1:50001'][0] = lastTime - (pool._avoid['127.0.0.1:50001'][1] * 60 * 1000);
+        server = pool._recommend();
+        // in which case the pool will allow the server to try again
+        server.port.should.equal(50001);
+        pool._ensure();
+        // on the next refusal the timeout doubles
+        setTimeout(function() {
+          pool._avoid['127.0.0.1:50001'][1].should.equal(4);
+          done();
+        }, 10);
+      }, 10);
     });
+
+    it.skip('removes a avoid servers if it finally succeeds', function() {
+
+    })
 
     // should also unref, and close it and all that to prevent leak
     it('if a socket has been gone too long the pool drops it');

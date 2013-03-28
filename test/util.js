@@ -28,6 +28,25 @@ describe('util', function() {
     socket._events.should.eql({});
   });
 
+  it('calcAvoidServers', function() {
+    var ret = util.calcAvoidServers({
+      '1': [Date.now(), 2],
+      '2': [Date.now() - 2 * 60 * 1000, 2],
+      '3': [Date.now(), 2]
+    })
+    ret.should.eql(['1', '3']);
+  });
+
+  it('calcServerTimeout', function() {
+    var ret = util.calcServerTimeout([]);
+    Array.isArray(ret).should.equal(true);
+    ret[1].should.equal(2);
+
+    var timeHasntPassed = [Date.now(), 2];
+    ret = util.calcServerTimeout(timeHasntPassed);
+    ret.should.eql(timeHasntPassed);
+  });
+
   it('arrayDiff', function() {
     var arr = [1,2,3,4,5];
     var arr2 = [2, 4];
