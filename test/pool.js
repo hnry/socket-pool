@@ -26,17 +26,17 @@ describe('Pool', function() {
       pool.min.should.equal(5);
       pool.max.should.equal(10);
       pool.servers['127.0.0.1:'+port].weight.should.equal(1);
-      should.exist(pool.sockets['127.0.0.1:'+port]);
+      should.exist(pool._sockets['127.0.0.1:'+port]);
       should.exist(pool.available);
     });
 
     it('sockets length', function() {
-      pool.sockets.length().should.be.equal(5);
-      pool.sockets['127.0.0.1:'+port]['blah1'] = {};
-      pool.sockets['127.0.0.1:'+port]['blah2'] = {};
-      pool.sockets.length().should.be.equal(7);
-      delete(pool.sockets['127.0.0.1:'+port]['blah1']);
-      delete(pool.sockets['127.0.0.1:'+port]['blah2']);
+      pool.length.should.be.equal(5);
+      pool._sockets['127.0.0.1:'+port]['blah1'] = {};
+      pool._sockets['127.0.0.1:'+port]['blah2'] = {};
+      pool.length.should.be.equal(7);
+      delete(pool._sockets['127.0.0.1:'+port]['blah1']);
+      delete(pool._sockets['127.0.0.1:'+port]['blah2']);
     });
 
   });
@@ -58,11 +58,11 @@ describe('Pool', function() {
     it('acquire maintains minimum sockets', function(done) {
       var socket = pool.acquire();
       pool.available.length.should.equal(1);
-      pool.sockets.length().should.equal(2);
+      pool.length.should.equal(2);
       function checkAvailable() {
         setTimeout(function() {
           if (pool.available.length === 2) {
-            pool.sockets.length().should.equal(3);
+            pool.length.should.equal(3);
             socket.release();
             done();
           } else { 
@@ -77,7 +77,7 @@ describe('Pool', function() {
       pool.min = 1;
       var queue = function() {
         pool.queue(function(sock) {
-          if (pool.sockets.length() > 12) {
+          if (pool.length > 12) {
             done();
           } else {
             queue();
@@ -89,7 +89,26 @@ describe('Pool', function() {
   });
 
   describe('drain', function() {
-    it('closes all sockets in the Pool and the Pool itself');
+    var pool, port, port2;
+
+    before(function(done) {
+      port = startServer(5, function() { done(); });
+      port2 = startServer();
+      pool = new Pool([
+        { host: '127.0.0.1', port: port },
+        { host: '127.0.0.1', port: port2 }
+      ], {
+        min: 10
+      });
+    })
+
+    it('closes all sockets in the Pool and the Pool itself', function(done) {
+      pool.drain();
+      pool._drained.should.equal(true);
+      pool.available.length.should.equal(0);
+      pool._sockets.length.should.equal(0);
+
+    });
   });
 
   describe('_ensure', function() {
@@ -127,7 +146,7 @@ describe('Pool', function() {
       }
 
       for (var i = 0; i < 5; i++) {
-        pool.sockets['127.0.0.1:'+port]['i' + i] = {};
+        pool._sockets['127.0.0.1:'+port]['i' + i] = {};
       }
       result = intercept(Pool.prototype, Pool.prototype._recommend);
       pool._ensure();
@@ -279,7 +298,7 @@ describe('Pool', function() {
       for (var i = 0, l = recommendations.length; i<l; i++) {
         var server = pool._recommend();
         server.port.should.be.equal(recommendations[i]);
-        pool.sockets[server.host + ':' + server.port]['i'+i] = {};
+        pool._sockets[server.host + ':' + server.port]['i'+i] = {};
       }
     });
 
@@ -288,12 +307,12 @@ describe('Pool', function() {
       server.port.should.be.equal(port[0]);
       for (var i = 0; i < pool.max; i++) {
         server = pool._recommend();
-        pool.sockets[server.host + ':' + server.port]['i' + i] = {};
+        pool._sockets[server.host + ':' + server.port]['i' + i] = {};
       }
-      Object.keys(pool.sockets['127.0.0.1:'+port[0]]).length.should.equal(11);
-      Object.keys(pool.sockets['127.0.0.1:'+port[1]]).length.should.equal(6);
-      Object.keys(pool.sockets['127.0.0.1:'+port[2]]).length.should.equal(1);
-      Object.keys(pool.sockets['127.0.0.1:'+port[3]]).length.should.equal(2);
+      Object.keys(pool._sockets['127.0.0.1:'+port[0]]).length.should.equal(11);
+      Object.keys(pool._sockets['127.0.0.1:'+port[1]]).length.should.equal(6);
+      Object.keys(pool._sockets['127.0.0.1:'+port[2]]).length.should.equal(1);
+      Object.keys(pool._sockets['127.0.0.1:'+port[3]]).length.should.equal(2);
     });
 
     it('maximum is already met, it still recommends', function() {
@@ -302,26 +321,26 @@ describe('Pool', function() {
 
       // fake add sockets to reach max
       for (var i = 0; i < pool.max + 20; i++) {
-        pool.sockets[server.host + ':' + server.port]['i' + i] = {};
+        pool._sockets[server.host + ':' + server.port]['i' + i] = {};
       }
       server = pool._recommend();
       server.port.should.be.equal(port[1]);
 
       // fake add sockets to reach max
       for (var i = 0; i < pool.max + 20; i++) {
-        pool.sockets[server.host + ':' + server.port]['i' + i] = {};
-        pool.sockets[server.host + ':' + port[2]]['i' + i] = {};
+        pool._sockets[server.host + ':' + server.port]['i' + i] = {};
+        pool._sockets[server.host + ':' + port[2]]['i' + i] = {};
       }
       // server port[3] is the lowest, so the pool will keep recommeding port[3]
       for (var i = 0; i < 4; i++) {
         server = pool._recommend();
         server.port.should.be.equal(port[3]);
-        pool.sockets[server.host + ':' + server.port]['qi' + i] = {};
+        pool._sockets[server.host + ':' + server.port]['qi' + i] = {};
       }
 
       for (var i = 0; i < 100; i++) {
         server = pool._recommend();
-        pool.sockets[server.host + ':' + server.port]['zi' + i] = {};
+        pool._sockets[server.host + ':' + server.port]['zi' + i] = {};
       }
     })
 
@@ -338,9 +357,9 @@ describe('Pool', function() {
         } else {
           server.port.should.not.equal(port[0]);
         }
-        pool.sockets[server.host + ':' + server.port]['i' + i] = {};
+        pool._sockets[server.host + ':' + server.port]['i' + i] = {};
       }
-      pool.sockets.length().should.equal(100);
+      pool.length.should.equal(100);
     })
   });
 
