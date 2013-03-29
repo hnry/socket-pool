@@ -88,7 +88,7 @@ describe('Pool', function() {
     });
   });
 
-  describe('drain', function() {
+  describe('close', function() {
     var pool, port, port2;
 
     before(function(done) {
@@ -102,12 +102,39 @@ describe('Pool', function() {
       });
     })
 
-    it('closes all sockets in the Pool and the Pool itself', function(done) {
-      pool.drain();
-      pool._drained.should.equal(true);
-      pool.available.length.should.equal(0);
-      pool._sockets.length.should.equal(0);
+    /*
+     *  All available sockets should gracefully be let go 
+     *  (unref & end)
+     *  All busy sockets (out of the pool) will be unref'd and end
+     *  on being released back into the pool
+     *
+     *  That way they are allowed to continue doing their thing
+     *  if they are busy in the process of being close()
+     *
+     *  queue stops processing NEW queued functions
+     *
+     *  add rejects everything
+     *
+     *  _recommend & _ensure no longer work
+     */
+    it('all sockets in the Pool and the Pool itself', function(done) {
+      var free = pool.available.length;
+      var total = pool.length;
+      pool.close();
 
+      pool._drained.should.equal(true);
+
+      // todo, connect this socket
+      var socket = new Socket();
+      pool.add(socket).should.equal(false);
+
+      pool.available.length.should.equal(0);
+      pool.length.should.equal(total - free);
+
+      var server = pool._recommend();
+      should.not.exist(server);
+      pool._ensure();
+      done();
     });
   });
 
