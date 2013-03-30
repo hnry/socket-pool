@@ -1,5 +1,8 @@
+release:
+		@make pack
+
 pack:
-		rm -rf package; rm -rf ????*.tgz; 
+		rm -rf package; rm -rf socket-pool*.tgz; 
 		npm pack .
 
 test:
