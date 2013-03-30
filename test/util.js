@@ -14,6 +14,8 @@ describe('util', function() {
     should.exist(psocket.release);
   })
 
+  it('attachEvents');
+
   it('generateId', function() {
     var dest = {};
     var i = 0;
