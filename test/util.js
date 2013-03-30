@@ -1,20 +1,27 @@
 var util = require('../lib/util');
 var assert = require('assert');
 var should = require('should');
-
-var netSocket = require('net').Socket;
+var Socket = require('net').Socket;
 
 describe('util', function() {
 
   it('toPSocket', function() {
-    var Socket = require('net').Socket;
     var socket = new Socket();
     var psocket = util.toPSocket(socket);
     psocket._socket.should.equal(socket);
     should.exist(psocket.release);
   })
 
-  it('attachEvents');
+  it('attachEvents', function() {
+    var socket = new Socket();
+    var originalLen = Object.keys(socket._events).length;
+    util.attachEvents(socket);
+    (Object.keys(socket._events).length > originalLen).should.equal(true);
+    should.exist(socket._events.data);
+    should.exist(socket._events.close);
+    should.exist(socket._events.timeout);
+    should.exist(socket._events.error);
+  });
 
   it('generateId', function() {
     var dest = {};
@@ -28,7 +35,7 @@ describe('util', function() {
   });
 
   it('removeEvents', function() {
-    var socket = new netSocket();
+    var socket = new Socket();
     var sockLen = socket._events.toString();
     socket.on('close', function() {});    
     socket.on('end', function() {});
