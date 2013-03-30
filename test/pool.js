@@ -1,4 +1,5 @@
 var Pool = require('../index')
+  , net = require('net')
   , Socket = require('net').Socket
   , should = require('should')
   , intercept = require('intercept.js');
@@ -433,8 +434,38 @@ describe('Pool', function() {
       }, 10);
     });
 
-    it.skip('removes avoid server if it finally succeeds', function() {
+    it('removes avoid server if it finally succeeds', function() {
+      // connection refused
+      var pool = new Pool([{
+        host: '127.0.0.1', port: 50001
+      }])
+      setTimeout(function() {
+        Array.isArray(pool._avoid['127.0.0.1:50001']).should.equal(true);
+        // there's no possible servers to give
+        var server = pool._recommend();
+        should.not.exist(server);
+        pool._ensure(); // just to make sure it doesn't crash pool
 
+        // pretend the timeout time has expired
+        var lastTime = pool._avoid['127.0.0.1:50001'][0];
+        pool._avoid['127.0.0.1:50001'][0] = lastTime - (pool._avoid['127.0.0.1:50001'][1] * 60 * 1000);
+        server = pool._recommend();
+        // in which case the pool will allow the server to try again
+        server.port.should.equal(50001);
+        pool._ensure();
+        //but it still exists on avoid
+        should.exist(pool._avoid['127.0.0.1:50001']);
+
+        // now we create a server so it succeeds
+        var server = net.createServer(50001);
+
+        pool.queue(function(socket){
+          socket.remotePort.should.equal(50001);
+          should.not.exist(pool._avoid['127.0.0.1:50001']);
+          server.close();
+          done();
+        });
+      }, 10);
     })
 
     // should also unref, and close it and all that to prevent leak
