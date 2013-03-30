@@ -14,6 +14,9 @@ describe('util', function() {
 
   it('attachEvents', function() {
     var socket = new Socket();
+    
+    if (socket._events === null) socket._events = {}; // 0.8.x compat
+
     var originalLen = Object.keys(socket._events).length;
     util.attachEvents(socket);
     (Object.keys(socket._events).length > originalLen).should.equal(true);
@@ -36,7 +39,6 @@ describe('util', function() {
 
   it('removeEvents', function() {
     var socket = new Socket();
-    var sockLen = socket._events.toString();
     socket.on('close', function() {});    
     socket.on('end', function() {});
     socket.on('timeout', function() {});
