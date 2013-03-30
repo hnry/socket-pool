@@ -6,6 +6,14 @@ var netSocket = require('net').Socket;
 
 describe('util', function() {
 
+  it('toPSocket', function() {
+    var Socket = require('net').Socket;
+    var socket = new Socket();
+    var psocket = util.toPSocket(socket);
+    psocket._socket.should.equal(socket);
+    should.exist(psocket.release);
+  })
+
   it('generateId', function() {
     var dest = {};
     var i = 0;

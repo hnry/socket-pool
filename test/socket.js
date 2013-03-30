@@ -46,7 +46,7 @@ describe('Socket', function() {
       }
 
       for (var i = 0, l = socketProps.length; i < l; i++) {
-        if (!ps[socketProps[i]]) throw new Error(socketProps[i] + ' does not exist')
+        should.exist(ps[socketProps[i]]);
       }
 
       ps.end();
@@ -57,16 +57,17 @@ describe('Socket', function() {
   });
 
   /*
-   *  Different ways the Socket will try to recover
+   *  socket recovery is just to remove the socket from the pool
+   *  and have it get unref
    */
   describe('recovery', function() {
-    it('retries connection')
+    it('removes itself from the pool');
 
   });
 
   describe('release', function() {
     var pool;
-    this.timeout(1000000);
+    this.timeout(10000);
     before(function(done) {
       var port = startServer(5, function() { done(); });
       pool = new Pool([
@@ -101,23 +102,23 @@ describe('Socket', function() {
 
     it('waits for socket buffer to empty', function(done) {
       var buf = new Buffer(10000000);
-      var socket = pool.acquire();
-      socket._test = 45;
-      socket.bufferSize().should.equal(0);
-      socket.write(buf);
-      socket.bufferSize().should.not.equal(0);
-      socket.release();
+      var psocket = pool.acquire();
+      psocket._test = 45;
+      psocket.bufferSize.should.equal(0);
+      psocket.write(buf);
+      psocket.bufferSize.should.not.equal(0);
+      psocket.release();
       should.not.exist(pool.available[0]._test);
 
-      var testFn = function(socket) {
-        if (socket._test === 45) {
-          socket.bufferSize().should.equal(0);
-          socket.release();
+      var testFn = function(psocket) {
+        if (psocket._test === 45) {
+          psocket.bufferSize.should.equal(0);
+          psocket.release();
           done();
         } else {
           pool.queue(testFn);
         }
-        socket.release();
+        psocket.release();
       }
 
       pool.queue(testFn);

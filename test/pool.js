@@ -136,6 +136,10 @@ describe('Pool', function() {
       pool._ensure();
       done();
     });
+
+    it('lets busy sockets continue');
+
+    it('eventually closes busy sockets if they take too long');
   });
 
   describe('_ensure', function() {
@@ -429,7 +433,7 @@ describe('Pool', function() {
       }, 10);
     });
 
-    it.skip('removes a avoid servers if it finally succeeds', function() {
+    it.skip('removes avoid server if it finally succeeds', function() {
 
     })
 
