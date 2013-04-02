@@ -74,6 +74,19 @@ describe('util', function() {
     result.should.eql([1,3,5]);
   });
 
-  it('delayCall');
+  it('delayCall', function(done) {
+    var seq = [];
+    var socket = new Socket();
+    socket.on('error', function(err) {
+      seq.unshift(2);
+    });
+    util.delayCall(function() {
+      seq.unshift(3);
+      seq.should.eql([3,2,1]);
+      done();
+    });
+    seq.unshift(1);
+    socket.connect(100);
+  });
 
 });
