@@ -52,7 +52,7 @@ describe('Socket', function() {
       }
 
       for (var i = 0, l = socketProps.length; i < l; i++) {
-        should.exist(ps[socketProps[i]]);
+        if (typeof ps[socketProps[i]] === 'undefined') throw new Error('Expected ' + socketProps[i] + ' to exist');
       }
 
       ps.end();
@@ -93,9 +93,7 @@ describe('Socket', function() {
       psocket.release();
       var result = psocket.write('123');
       should.not.exist(result);
-
-      // this is probably ok
-      should.exist(psocket.remoteAddress);
+      should.not.exist(psocket.bytesRead);
     });
 
     it('removes all events', function() {
