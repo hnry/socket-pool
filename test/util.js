@@ -86,7 +86,7 @@ describe('util', function() {
       done();
     });
     seq.unshift(1);
-    socket.connect(100);
+    socket.connect();
   });
 
 });
